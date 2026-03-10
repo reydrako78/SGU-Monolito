@@ -8,9 +8,9 @@ class Enrollment(models.Model):
         ('completed', 'Completado'),
     ]
 
-    # Referencias externas
-    student_id = models.IntegerField(verbose_name='ID de estudiante', db_index=True)
-    period_id  = models.IntegerField(verbose_name='ID de período',    db_index=True)
+    # Relaciones foráneas
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='enrollments', verbose_name='Estudiante')
+    period = models.ForeignKey('courses.Period', on_delete=models.CASCADE, related_name='enrollments', verbose_name='Período')
 
     enrollment_date = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de inscripción')
     status = models.CharField(
@@ -25,7 +25,7 @@ class Enrollment(models.Model):
     class Meta:
         verbose_name        = 'Inscripción'
         verbose_name_plural = 'Inscripciones'
-        unique_together     = ('student_id', 'period_id')
+        unique_together     = ('student', 'period')
         ordering            = ['-enrollment_date']
 
     def __str__(self):
@@ -43,9 +43,9 @@ class EnrollmentDetail(models.Model):
         related_name='details', verbose_name='Inscripción',
     )
 
-    # Referencias externas (cross-service)
-    section_id          = models.IntegerField(verbose_name='ID de sección',           db_index=True)
-    curricular_unit_id  = models.IntegerField(verbose_name='ID de Unidad Curricular', db_index=True)
+    # Relaciones foráneas
+    section = models.ForeignKey('courses.Section', on_delete=models.CASCADE, related_name='enrollment_details', verbose_name='Sección')
+    curricular_unit = models.ForeignKey('curriculum.CurricularUnit', on_delete=models.CASCADE, related_name='enrollment_details', verbose_name='Unidad Curricular')
 
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     enrolled_at  = models.DateTimeField(auto_now_add=True)
@@ -62,7 +62,7 @@ class EnrollmentDetail(models.Model):
     class Meta:
         verbose_name        = 'Detalle de inscripción'
         verbose_name_plural = 'Detalles de inscripción'
-        unique_together     = ('enrollment', 'section_id')
+        unique_together     = ('enrollment', 'section')
 
     def __str__(self):
         return f'{self.uc_code or f"UC-{self.curricular_unit_id}"} — Sección {self.section_number}'

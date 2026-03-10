@@ -95,9 +95,9 @@ class CareerPlan(models.Model):
     en un período académico específico (1..8).
     career_id referencia la Carrera en students_service (cross-service, no FK).
     """
-    career_id       = models.IntegerField(
-        db_index=True,
-        help_text='ID de la Carrera en students_service'
+    career = models.ForeignKey(
+        'students.Career', on_delete=models.CASCADE,
+        related_name='curricular_plans', verbose_name='Carrera'
     )
     curricular_unit = models.ForeignKey(
         CurricularUnit,
@@ -114,13 +114,13 @@ class CareerPlan(models.Model):
     )
 
     class Meta:
-        unique_together = ('career_id', 'curricular_unit', 'academic_period')
-        ordering        = ['career_id', 'academic_period', 'order', 'curricular_unit__name']
+        unique_together = ('career', 'curricular_unit', 'academic_period')
+        ordering        = ['career', 'academic_period', 'order', 'curricular_unit__name']
         verbose_name        = 'Ítem del Plan Curricular'
         verbose_name_plural = 'Plan Curricular'
 
     def __str__(self):
-        return f'Carrera {self.career_id} | PA{self.academic_period} | {self.curricular_unit.name}'
+        return f'{self.career.name} | PA{self.academic_period} | {self.curricular_unit.name}'
 
 
 class Prerequisite(models.Model):
@@ -155,43 +155,45 @@ class CareerSede(models.Model):
     Asignación de una Carrera a una Sede (operación exclusiva del nivel global).
     career_id y sede_id son referencias externas a students_service y auth_service respectivamente.
     """
-    career_id      = models.IntegerField(db_index=True, help_text='ID Carrera (students_service)')
-    sede_id        = models.IntegerField(db_index=True, help_text='ID Sede (auth_service)')
+    from django.conf import settings
+    career = models.ForeignKey('students.Career', on_delete=models.CASCADE, related_name='sedes')
+    sede = models.ForeignKey('core.Sede', on_delete=models.CASCADE, related_name='careers')
     is_active      = models.BooleanField(default=True)
     assigned_at    = models.DateTimeField(auto_now_add=True)
-    assigned_by_id = models.IntegerField(
-        null=True, blank=True,
-        help_text='ID del usuario global que realizó la asignación (auth_service)'
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='career_sedes_assigned'
     )
 
     class Meta:
-        unique_together     = ('career_id', 'sede_id')
-        ordering            = ['career_id', 'sede_id']
+        unique_together     = ('career', 'sede')
+        ordering            = ['career', 'sede']
         verbose_name        = 'Carrera en Sede'
         verbose_name_plural = 'Carreras por Sede'
 
     def __str__(self):
-        return f'Carrera {self.career_id} → Sede {self.sede_id}'
+        return f'{self.career.name} → {self.sede.name}'
 
 
 class CareerNucleo(models.Model):
     """
     Asignación de una Carrera a un Núcleo (operación exclusiva del nivel global).
     """
-    career_id      = models.IntegerField(db_index=True, help_text='ID Carrera (students_service)')
-    nucleo_id      = models.IntegerField(db_index=True, help_text='ID Núcleo (auth_service)')
+    from django.conf import settings
+    career = models.ForeignKey('students.Career', on_delete=models.CASCADE, related_name='nucleos')
+    nucleo = models.ForeignKey('core.Nucleo', on_delete=models.CASCADE, related_name='careers')
     is_active      = models.BooleanField(default=True)
     assigned_at    = models.DateTimeField(auto_now_add=True)
-    assigned_by_id = models.IntegerField(
-        null=True, blank=True,
-        help_text='ID del usuario global que realizó la asignación (auth_service)'
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='career_nucleos_assigned'
     )
 
     class Meta:
-        unique_together     = ('career_id', 'nucleo_id')
-        ordering            = ['career_id', 'nucleo_id']
+        unique_together     = ('career', 'nucleo')
+        ordering            = ['career', 'nucleo']
         verbose_name        = 'Carrera en Núcleo'
         verbose_name_plural = 'Carreras por Núcleo'
 
     def __str__(self):
-        return f'Carrera {self.career_id} → Núcleo {self.nucleo_id}'
+        return f'{self.career.name} → {self.nucleo.name}'

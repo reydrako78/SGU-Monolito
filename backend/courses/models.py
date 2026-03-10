@@ -40,24 +40,24 @@ class Section(models.Model):
     """
     Sección = una Unidad Curricular ofertada por una sede/núcleo en un período.
 
-    Referencias externas (cross-service — sin FK de base de datos):
-      curricular_unit_id → curriculum_service.CurricularUnit
-      career_id          → students_service.Career
-      sede_id            → auth_service.Sede
-      nucleo_id          → auth_service.Nucleo  (null = nivel sede)
-      professor_user_id  → auth_service.CustomUser (null = sin asignar)
+    Relaciones foráneas (Monolito):
+      curricular_unit → curriculum.CurricularUnit
+      career          → students.Career
+      sede            → core.Sede
+      nucleo          → core.Nucleo
+      professor_user  → core.CustomUser
     """
 
     # ── ¿Qué se oferta? ───────────────────────────────────────────
-    curricular_unit_id = models.IntegerField(
-        db_index=True,
-        verbose_name='ID de Unidad Curricular',
-        help_text='Referencia a CurricularUnit en curriculum_service',
+    curricular_unit = models.ForeignKey(
+        'curriculum.CurricularUnit', on_delete=models.CASCADE,
+        related_name='sections',
+        verbose_name='Unidad Curricular',
     )
-    career_id = models.IntegerField(
-        db_index=True,
-        verbose_name='ID de Carrera',
-        help_text='Referencia a Career en students_service',
+    career = models.ForeignKey(
+        'students.Career', on_delete=models.CASCADE,
+        related_name='sections',
+        verbose_name='Carrera',
     )
 
     # ── ¿Cuándo? ──────────────────────────────────────────────────
@@ -67,15 +67,16 @@ class Section(models.Model):
     )
 
     # ── ¿Dónde? ───────────────────────────────────────────────────
-    sede_id = models.IntegerField(
-        db_index=True,
-        verbose_name='ID de Sede',
-        help_text='Referencia a Sede en auth_service',
+    sede = models.ForeignKey(
+        'core.Sede', on_delete=models.CASCADE,
+        related_name='sections',
+        verbose_name='Sede',
     )
-    nucleo_id = models.IntegerField(
-        null=True, blank=True, db_index=True,
-        verbose_name='ID de Núcleo',
-        help_text='Referencia a Nucleo en auth_service (null = nivel sede)',
+    nucleo = models.ForeignKey(
+        'core.Nucleo', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='sections',
+        verbose_name='Núcleo (opcional)',
     )
 
     # ── Identificación de la sección ──────────────────────────────
@@ -86,10 +87,11 @@ class Section(models.Model):
     )
 
     # ── Docente ───────────────────────────────────────────────────
-    professor_user_id = models.IntegerField(
-        null=True, blank=True,
-        verbose_name='ID de usuario del profesor',
-        help_text='Referencia a CustomUser en auth_service',
+    from django.conf import settings
+    professor_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='sections_taught',
+        verbose_name='Profesor asignado',
     )
     professor_name = models.CharField(
         max_length=200, blank=True,
@@ -123,8 +125,8 @@ class Section(models.Model):
         verbose_name_plural = 'Secciones'
         ordering            = ['period', 'uc_code', 'section_number']
         unique_together     = (
-            'curricular_unit_id', 'career_id',
-            'period', 'sede_id', 'section_number',
+            'curricular_unit', 'career',
+            'period', 'sede', 'section_number',
         )
 
     def __str__(self):

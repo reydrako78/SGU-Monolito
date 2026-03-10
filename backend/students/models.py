@@ -40,8 +40,10 @@ class Student(models.Model):
         ('withdrawn', 'Retirado'),
     ]
 
-    # Referencia al usuario en el Auth Service (solo ID externo)
-    user_id = models.IntegerField(unique=True, verbose_name='ID de usuario (Auth Service)')
+    from django.conf import settings
+
+    # Referencia al usuario local (Monolito)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='student_profile', verbose_name='Usuario')
 
     carnet = models.CharField(max_length=20, unique=True, verbose_name='Carné')
     career = models.ForeignKey(Career, on_delete=models.PROTECT, verbose_name='Carrera')

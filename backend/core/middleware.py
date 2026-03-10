@@ -44,26 +44,3 @@ class AdminAccessMiddleware:
         
         return self.get_response(request)
 
-class InternalServiceMiddleware:
-    """
-    Middleware que valida que la petición provenga de otro servicio del sistema
-    mediante una cabecera de secreto compartido (X-Internal-Secret).
-    Útil para endpoints que no requieren autenticación de usuario (JWT)
-    pero deben estar cerrados al público.
-    """
-    def __init__(self, get_response):
-        self.get_response = get_response
-        self.internal_key = os.environ.get('INTERNAL_API_KEY')
-
-    def __call__(self, request):
-        if not self.internal_key:
-            return self.get_response(request)
-
-        # Solo aplicamos validación a paths de API (/api/) que sean internos 
-        # (podríamos definir una lista blanca, pero por ahora lo dejamos opcional)
-        # En microservicios esclavos (students, curriculum) esto será REQUERIDO o 
-        # se usará como alternativa a JWT.
-        
-        return self.get_response(request)
-
-import os

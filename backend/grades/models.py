@@ -11,15 +11,12 @@ class Grade(models.Model):
         ('withdrawn', 'Retirado'),
     ]
 
-    # Referencias externas (IDs de otros servicios)
-    student_id           = models.IntegerField(verbose_name='ID de estudiante', db_index=True)
-    curricular_unit_id   = models.IntegerField(
-        verbose_name='ID de Unidad Curricular', db_index=True,
-        help_text='Referencia a CurricularUnit en curriculum_service',
-    )
-    section_id           = models.IntegerField(verbose_name='ID de sección', db_index=True)
-    period_id            = models.IntegerField(verbose_name='ID de período', db_index=True)
-    enrollment_detail_id = models.IntegerField(verbose_name='ID de detalle de inscripción')
+    # Relaciones foráneas
+    student = models.ForeignKey('students.Student', on_delete=models.CASCADE, related_name='grades', verbose_name='Estudiante')
+    curricular_unit = models.ForeignKey('curriculum.CurricularUnit', on_delete=models.CASCADE, related_name='grades', verbose_name='Unidad Curricular')
+    section = models.ForeignKey('courses.Section', on_delete=models.CASCADE, related_name='grades', verbose_name='Sección')
+    period = models.ForeignKey('courses.Period', on_delete=models.CASCADE, related_name='grades', verbose_name='Período')
+    enrollment_detail = models.OneToOneField('enrollments.EnrollmentDetail', on_delete=models.CASCADE, related_name='grade', verbose_name='Detalle de inscripción')
 
     # Datos denormalizados
     student_carnet = models.CharField(max_length=20, blank=True, verbose_name='Carné')
@@ -42,8 +39,8 @@ class Grade(models.Model):
     class Meta:
         verbose_name = 'Calificación'
         verbose_name_plural = 'Calificaciones'
-        unique_together = ('student_id', 'section_id', 'period_id')
-        ordering = ['-period_id', 'student_carnet']
+        unique_together = ('student', 'section', 'period')
+        ordering = ['-period', 'student_carnet']
 
     def __str__(self):
         return f'{self.student_carnet} - {self.uc_code} ({self.period_name})'
